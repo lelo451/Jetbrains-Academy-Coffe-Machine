@@ -15,13 +15,13 @@ class Machine {
     private State state = State.WAIT;
     private Fill fill = Fill.WATER;
 
-    String printStatus() {
-        return "The coffee machine has:\n" +
+    private String printStatus() {
+        return "\nThe coffee machine has:\n" +
                 water + " of water\n" +
                 milk + " of milk\n" +
                 coffee + " of coffee beans\n" +
                 cups + " of disposable cups\n" +
-                money + " of money";
+                "$" + money + " of money\n";
     }
 
     private int checkResources(int needWater, int needMilk, int needCoffee) {
@@ -77,37 +77,41 @@ class Machine {
     }
 
     String action(String input) {
+        String waitMessage = "\nWrite action (buy, fill, take, remaining, exit): ";
         switch (state) {
             case WAIT:
                 switch (input) {
                     case "buy":
                         state = State.BUY;
-                        System.out.print("What do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino: ");
-                        action(new Scanner(System.in).nextLine());
-                        break;
+                        return "What do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino, back - to main menu: ";
                     case "fill":
                         state = State.FILL;
                         fill = Fill.WATER;
-                        System.out.print("Write how many ml of water do you want to add: ");
-                        action(new Scanner(System.in).nextLine());
-                        break;
+                        return "Write how many ml of water do you want to add: ";
                     case "take":
                         int wasMoney = money;
                         money = 0;
-                        System.out.println("I gave you " + wasMoney);
-                        break;
+                        return "I gave you $" + wasMoney + "\n" + waitMessage;
+                    case "remaining":
+                        return printStatus() + waitMessage;
                 }
                 break;
             case BUY:
                 state = State.WAIT;
-                switch (checkCoffee(input)) {
-                    case 0:
-                        makeCoffee(input);
-                    case 1:
-                    case 2:
-                    case 3:
-                    case 4:
-                        break;
+                if (!input.equals("back")) {
+                    switch (checkCoffee(input)) {
+                        case 0:
+                            makeCoffee(input);
+                            return "I have enough resources, making you a coffee!\n" + waitMessage;
+                        case 1:
+                            return "Sorry, not enough water!\n" + waitMessage;
+                        case 2:
+                            return "Sorry, not enough milk!\n" + waitMessage;
+                        case 3:
+                            return "Sorry, not enough coffee!\n" + waitMessage;
+                        case 4:
+                            return "Sorry, not enough cups!\n" + waitMessage;
+                    }
                 }
                 break;
             case FILL:
@@ -115,30 +119,24 @@ class Machine {
                     case WATER:
                         water += Integer.parseInt(input);
                         fill = Fill.MILK;
-                        System.out.print("Write how many ml of milk do you want to add: ");
-                        action(new Scanner(System.in).nextLine());
-                        break;
+                        return "Write how many ml of milk do you want to add: ";
                     case MILK:
                         milk += Integer.parseInt(input);
                         fill = Fill.COFFEE;
-                        System.out.print("Write how many grams of coffee beans do you want to add: ");
-                        action(new Scanner(System.in).nextLine());
-                        break;
+                        return "Write how many grams of coffee beans do you want to add: ";
                     case COFFEE:
                         coffee += Integer.parseInt(input);
                         fill = Fill.CUP;
-                        System.out.print("Write how many disposable cups of coffee do you want to add: ");
-                        action(new Scanner(System.in).nextLine());
-                        break;
+                        return "Write how many disposable cups of coffee do you want to add: ";
                     case CUP:
                         cups += Integer.parseInt(input);
                         state = State.WAIT;
                         fill = Fill.WATER;
-                        break;
+                        return waitMessage;
                 }
                 break;
         }
-        return "";
+        return waitMessage;
     }
 }
 
@@ -146,11 +144,13 @@ public class CoffeeMachine {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         Machine machine = new Machine();
-        System.out.println(machine.printStatus());
 
-        System.out.print("\nWrite action (buy, fill, take): ");
-        String input = scanner.nextLine();
-        System.out.println(machine.action(input));
-        System.out.println(machine.printStatus());
+        System.out.print(machine.action(""));
+        int exit = 0;
+        while (exit != 1) {
+            String input = scanner.nextLine();
+            if (input.equals("exit")) exit = 1;
+            else System.out.print(machine.action(input));
+        }
     }
 }
